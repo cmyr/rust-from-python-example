@@ -1,36 +1,22 @@
 
 #[macro_use] extern crate cpython;
 
-// use cpython::{PyObject, PyResult, Python, PyTuple, PyDict};
+use cpython::{PyResult, Python, PyObject, PyErr, exc, ToPyObject, PythonObject, PyString, PyList};
 
-// py_module_initializer!(libpyoxide, libpyoxide, PyInit_libpyoxide, |py, m| {
-//     try!(m.add(py, "__doc__", "Module documentation string"));
-//     try!(m.add(py, "run", py_fn!(py, run(*args, **kwargs))));
-//     try!(m.add(py, "val", py_fn!(py, val())));
-//     Ok(())
-// });
-
-// fn run(py: Python, args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<PyObject> {
-//     println!("Rust says: Hello Python!");
-//     for arg in args.iter(py) {
-//         println!("Rust got {}", arg);
-//     }
-//     if let Some(kwargs) = kwargs {
-//         for (key, val) in kwargs.items(py) {
-//             println!("{} = {}", key, val);
-//         }
-//     }
-//     Ok(py.None())
-// }
-
-// fn val(_: Python) -> PyResult<i32> {
-//     Ok(42)
-// }
+// add bindings to the generated python module
+// N.B: names here are important; "rust2py" should be replaced by the lib name in your Cargo.toml
+py_module_initializer!(librust2py, initlibrust2py, PyInit_librust2py, |py, m| {
+    try!(m.add(py, "__doc__", "Module documentation string"));
+	try!(m.add(py, "val", py_fn!(py, val())));
+	try!(m.add(py, "fib", py_fn!(py, fib2(arg0: PyObject))));
+	try!(m.add(py, "reverse", py_fn!(py, reverse_words(text: PyObject))));
+    Ok(())
+});
 
 
-use cpython::{PyResult, Python, PyTuple, PyDict, PyObject, PyErr, exc, ToPyObject, PythonObject, PyString, PyList}; // PyTuple, PyErr, PyDict, PyObject, ToPyObject, PythonObject};
-
-mod pyoxide {
+// An example of keeping an actual implementation in a seperate module
+// code from http://ehiggs.github.io/2015/07/Python-Modules-In-Rust/ 
+mod module_example {
 	pub fn fib(n : u64) -> u64 {
     if n < 2 {
         return 1
@@ -50,31 +36,12 @@ mod pyoxide {
 	}
 }
 
-
-py_module_initializer!(libpyoxide, initlibpyoxide, PyInit_libpyoxide, |py, m| {
-    try!(m.add(py, "__doc__", "Module documentation string"));
-	try!(m.add(py, "val", py_fn!(py, val())));
-	try!(m.add(py, "fib", py_fn!(py, fib(*args, **kwargs))));
-	try!(m.add(py, "fib2", py_fn!(py, fib2(arg0: PyObject))));
-	try!(m.add(py, "reverse", py_fn!(py, tokenize(text: PyObject))));
-    Ok(())
-});
-
-
+/// wrapper around a function which takes no arguments
 fn val(_: Python) -> PyResult<i32> {
-	Ok(pyoxide::val())
+	Ok(module_example::val())
 }
 
-fn fib(py: Python, args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<u64> {
-	// let arg0 = match args.get_item(0).extract::<u64>() {
-	let arg0 = match args.get_item(py, 0).extract::<u64>(py) {
-		Ok(x) => x,
-		Err(_) => 1337,
-	};
-	
-	Ok(pyoxide::fib(arg0))
-}
-
+/// wrapper for a function which takes one argument
 fn fib2(py: Python, arg0: PyObject) -> PyResult<u64> {
 	let arg = match arg0.extract::<u64>(py) {
 		Ok(x) => x,
@@ -84,11 +51,12 @@ fn fib2(py: Python, arg0: PyObject) -> PyResult<u64> {
 			return Err(pyerr);
 		}
 	};
-	Ok(pyoxide::fib(arg))
+	Ok(module_example::fib(arg))
 
 }
 
-fn tokenize(py: Python, text: PyObject) -> PyResult<PyList> {
+/// fully contained function returning a list
+fn reversed_words(py: Python, text: PyObject) -> PyResult<PyList> {
 	
 	let inp = match text.extract::<PyString>(py) {
 		Ok(x) => x.to_string_lossy(py).into_owned(),
@@ -108,10 +76,10 @@ fn tokenize(py: Python, text: PyObject) -> PyResult<PyList> {
 
 #[cfg(test)]
 mod tests {
-	 use super::pyoxide;
+	 use super::module_example;
     #[test]
     fn it_works() {
-    	assert_eq!(pyoxide::fib(1), 1);
-    	assert_eq!(pyoxide::fib(5), 8);
+    	assert_eq!(module_example::fib(1), 1);
+    	assert_eq!(module_example::fib(5), 8);
     }
 }

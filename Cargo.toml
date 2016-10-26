@@ -1,10 +1,10 @@
 [package]
-name = "pyoxide"
+name = "rust2py"
 version = "0.1.0"
 authors = ["Colin Rofls <colin@cmyr.net>"]
 
 [lib]
-name = "pyoxide"
+name = "rust2py"
 crate-type = ["dylib"]
 
 [dependencies]
