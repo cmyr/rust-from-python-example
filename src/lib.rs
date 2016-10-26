@@ -1,15 +1,15 @@
 
 #[macro_use] extern crate cpython;
 
-use cpython::{PyResult, Python, PyObject, PyErr, exc, ToPyObject, PythonObject, PyString, PyList};
+use cpython::{PyResult, Python, ToPyObject, PyList};
 
 // add bindings to the generated python module
 // N.B: names here are important; "rust2py" should be replaced by the lib name in your Cargo.toml
 py_module_initializer!(librust2py, initlibrust2py, PyInit_librust2py, |py, m| {
     try!(m.add(py, "__doc__", "Module documentation string"));
     try!(m.add(py, "val", py_fn!(py, val())));
-    try!(m.add(py, "fib", py_fn!(py, fib(arg0: PyObject))));
-    try!(m.add(py, "reversed_words", py_fn!(py, reversed_words(text: PyObject))));
+    try!(m.add(py, "fib", py_fn!(py, fib(arg0: u64))));
+    try!(m.add(py, "reversed_words", py_fn!(py, reversed_words(text: &str))));
     Ok(())
 });
 
@@ -42,32 +42,13 @@ fn val(_: Python) -> PyResult<i32> {
 }
 
 /// wrapper for a function which takes one argument
-fn fib(py: Python, arg0: PyObject) -> PyResult<u64> {
-    let arg = match arg0.extract::<u64>(py) {
-        Ok(x) => x,
-        Err(_) => {
-            let errmsg = "colin doesn't know rust";
-            let pyerr = PyErr::new_lazy_init(py.get_type::<exc::ValueError>(), Some(errmsg.to_py_object(py).into_object()));
-            return Err(pyerr);
-        }
-    };
-    Ok(module_example::fib(arg))
-
+fn fib(_: Python, arg0: u64) -> PyResult<u64> {
+    Ok(module_example::fib(arg0))
 }
 
 /// fully contained function returning a list
-fn reversed_words(py: Python, text: PyObject) -> PyResult<PyList> {
-    
-    let inp = match text.extract::<PyString>(py) {
-        Ok(x) => x.to_string_lossy(py).into_owned(),
-        Err(_) => {
-            let errmsg = "invalid type, we have type checking over here it's nice"
-                .to_py_object(py)
-                .into_object();
-            return Err(PyErr::new_lazy_init(py.get_type::<exc::ValueError>(), Some(errmsg)));
-        }
-    };
-    let out: Vec<String> = inp.split_whitespace()
+fn reversed_words(py: Python, text: &str) -> PyResult<PyList> {
+    let out: Vec<String> = text.split_whitespace()
         .rev()
         .map(|x| x.to_string())
         .collect();
