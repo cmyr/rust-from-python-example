@@ -1,0 +1,11 @@
+[package]
+name = "pyoxide"
+version = "0.1.0"
+authors = ["Colin Rofls <colin@cmyr.net>"]
+
+[lib]
+name = "pyoxide"
+crate-type = ["dylib"]
+
+[dependencies]
+cpython = { git = "https://github.com/dgrunwald/rust-cpython.git" }
