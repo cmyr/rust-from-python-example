@@ -8,8 +8,8 @@ use cpython::{PyResult, Python, PyObject, PyErr, exc, ToPyObject, PythonObject, 
 py_module_initializer!(librust2py, initlibrust2py, PyInit_librust2py, |py, m| {
     try!(m.add(py, "__doc__", "Module documentation string"));
 	try!(m.add(py, "val", py_fn!(py, val())));
-	try!(m.add(py, "fib", py_fn!(py, fib2(arg0: PyObject))));
-	try!(m.add(py, "reverse", py_fn!(py, reverse_words(text: PyObject))));
+	try!(m.add(py, "fib", py_fn!(py, fib(arg0: PyObject))));
+	try!(m.add(py, "reversed_words", py_fn!(py, reversed_words(text: PyObject))));
     Ok(())
 });
 
@@ -42,7 +42,7 @@ fn val(_: Python) -> PyResult<i32> {
 }
 
 /// wrapper for a function which takes one argument
-fn fib2(py: Python, arg0: PyObject) -> PyResult<u64> {
+fn fib(py: Python, arg0: PyObject) -> PyResult<u64> {
 	let arg = match arg0.extract::<u64>(py) {
 		Ok(x) => x,
 		Err(_) => {
